@@ -1,68 +1,40 @@
 # amber-svc-router-gate
 
-`amber-svc-router-gate` explores backend services in Kotlin. The repository keeps the core rule set compact, then surrounds it with examples that show how the decisions move.
+`amber-svc-router-gate` explores backend services with a small Kotlin codebase and local fixtures. The technical goal is to design a Kotlin verification harness for router systems, covering stream reduction, windowed input fixtures, and failure-oriented tests.
 
-## Amber Svc Router Gate Notes
+## Use Case
 
-The quickest review path is the verifier first, then the fixtures, then the operations note. That order makes it easy to see whether the code, data, and explanation still agree.
+The project exists to keep a narrow engineering decision visible and testable. For this repo, that decision is how queue pressure and worker slack should influence a review result.
 
-## Feature Notes
+## Amber Svc Router Gate Review Notes
 
-- Includes extended examples for queue pressure, including `recovery` and `degraded`.
-- Documents bounded workers tradeoffs in `docs/operations.md`.
-- Runs locally with a single verification command and no external credentials.
-- Stores project constants and verification metadata in `metadata/project.json`.
-- Adds a repository audit script that checks structure before running the language verifier.
+Start with `session drift` and `queue pressure`. Those cases create the widest score spread in this repo, so they are the best quick check when the model changes.
 
-## Why This Exists
+## Highlights
 
-This is not a wrapper around a service. It is a self-contained project that shows how the model behaves when demand, capacity, latency, risk, and weight move in different directions.
+- `fixtures/domain_review.csv` adds cases for queue pressure and retry load.
+- `metadata/domain-review.json` records the same cases in structured form.
+- `config/review-profile.json` captures the read order and the two review questions.
+- `examples/amber-svc-router-walkthrough.md` walks through the case spread.
+- The Kotlin code includes a review path for `session drift` and `queue pressure`.
+- `docs/field-notes.md` explains the strongest and weakest cases.
 
-## Code Tour
+## Code Layout
 
-- `src`: primary implementation
-- `tests`: verification harness
-- `fixtures`: compact golden scenarios
-- `examples`: expanded scenario set
-- `metadata`: project constants and verification metadata
-- `docs`: operations and extension notes
-- `scripts`: local verification and audit commands
+The core code exposes a scoring path and the added review layer uses `signal`, `slack`, `drag`, and `confidence`. The domain terms are `queue pressure`, `retry load`, `worker slack`, and `session drift`.
 
-## Implementation Notes
+The Kotlin addition stays small enough to inspect in one sitting.
 
-The design is intentionally direct: parse or construct a signal, score it, classify it, and verify the expected branch. This makes the repository useful for studying backend services behavior without needing a service or database unless the language project itself is SQL. The Kotlin version keeps data classes and model logic close together for a JVM-friendly core.
-
-## Try It
+## Run The Check
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1
 ```
 
-This runs the language-level build or test path against the compact fixture set.
+## Regression Path
 
-## Example Scenarios
+The same command runs the local verification path. The highest-scoring domain case is `recovery` at 172, which lands in `ship`. The most cautious case is `stale` at 128, which lands in `watch`.
 
-`examples/extended_cases.csv` adds six named cases. I kept the names plain so failures are easy to read in a terminal: baseline, pressure, surge, degraded, recovery, and boundary.
+## Future Work
 
-## Tests
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/audit.ps1
-```
-
-The audit command checks repository structure and README constraints before it delegates to the verifier.
-
-## Boundaries
-
-The fixture set is deliberately small. That keeps the review surface clear, but it also means the model should not be treated as a complete domain simulator.
-
-## Roadmap
-
-- Add a loader for `examples/extended_cases.csv` and promote selected cases into the language test suite.
-- Add a short report command that prints the score breakdown for a single scenario.
-- Add malformed input fixtures so the failure path is as visible as the happy path.
-- Add one more backend services fixture that focuses on a malformed or borderline input.
-
-## Local Setup
-
-Use a normal shell with Kotlin available on `PATH`. The verifier is written as a PowerShell script because the portfolio was assembled on Windows.
+This remains a local project with deterministic fixtures. It does not depend on credentials, hosted services, or live data. Future work should add richer malformed inputs before widening the public API.
